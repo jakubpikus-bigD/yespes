@@ -3,635 +3,496 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CyberChat 2000 - AI Chatbot</title>
+<title>MORTAL CHAT — FIGHT!</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background-color: #008080;
-    background-image:
-      repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0,0,0,0.05) 1px, rgba(0,0,0,0.05) 2px),
-      repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(0,0,0,0.05) 1px, rgba(0,0,0,0.05) 2px);
-    font-family: "Courier New", Courier, monospace;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px;
-  }
-
-  /* Taskbar */
-  #taskbar {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 32px;
-    background: #C0C0C0;
-    border-top: 2px solid #FFFFFF;
-    display: flex;
-    align-items: center;
-    padding: 0 4px;
-    gap: 6px;
-    z-index: 1000;
-  }
-  #start-btn {
-    background: #C0C0C0;
-    border: 2px solid;
-    border-color: #FFFFFF #808080 #808080 #FFFFFF;
-    padding: 2px 10px;
-    font-family: "Courier New", monospace;
-    font-weight: bold;
-    font-size: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  #start-btn:active { border-color: #808080 #FFFFFF #FFFFFF #808080; }
-  #clock {
-    margin-left: auto;
-    background: #C0C0C0;
-    border: 2px solid;
-    border-color: #808080 #FFFFFF #FFFFFF #808080;
-    padding: 2px 8px;
-    font-size: 11px;
-  }
-  .taskbar-item {
-    background: #C0C0C0;
-    border: 2px solid;
-    border-color: #808080 #FFFFFF #FFFFFF #808080;
-    padding: 2px 10px;
-    font-size: 11px;
-    font-family: "Courier New", monospace;
-  }
-
-  /* Splash screen */
-  #splash {
-    position: fixed;
-    inset: 0;
-    background: #000080;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    color: #FFFFFF;
-  }
-  #splash h1 {
-    font-size: 48px;
-    letter-spacing: 8px;
-    color: #FFFFFF;
-    text-shadow: 4px 4px #FF00FF, -2px -2px #00FFFF;
-    animation: glitch 1.5s infinite;
-  }
-  @keyframes glitch {
-    0%, 90%, 100% { text-shadow: 4px 4px #FF00FF, -2px -2px #00FFFF; }
-    92% { text-shadow: -4px 4px #FF00FF, 2px -2px #00FFFF; transform: translateX(2px); }
-    94% { text-shadow: 4px -4px #00FFFF, -2px 2px #FF00FF; transform: translateX(-2px); }
-    96% { text-shadow: 4px 4px #FF00FF, -2px -2px #00FFFF; transform: translateX(0); }
-  }
-  #loading-bar-wrap {
-    margin-top: 30px;
-    width: 400px;
-    max-width: 90vw;
-    border: 2px solid #FFFFFF;
-    padding: 3px;
-  }
-  #loading-bar {
-    height: 20px;
-    background: #0000FF;
-    width: 0%;
-    transition: width 0.05s linear;
-    position: relative;
-    overflow: hidden;
-  }
-  #loading-bar::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      90deg,
-      rgba(255,255,255,0.3) 0px,
-      rgba(255,255,255,0.3) 10px,
-      transparent 10px,
-      transparent 20px
-    );
-  }
-  #loading-text {
-    margin-top: 12px;
-    font-size: 14px;
-    color: #FFFF00;
-    letter-spacing: 2px;
-  }
-  .blink { animation: blink 0.7s infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
-
-  /* Main window */
-  #main-window {
-    width: 100%;
-    max-width: 800px;
-    margin-bottom: 40px;
-  }
-
-  /* Win95 window */
-  .win-window {
-    background: #C0C0C0;
-    border: 2px solid;
-    border-color: #FFFFFF #808080 #808080 #FFFFFF;
-    box-shadow: 2px 2px 0 #000000;
-    margin-bottom: 10px;
-  }
-  .win-titlebar {
-    background: linear-gradient(90deg, #000080, #1084D0);
-    color: #FFFFFF;
-    padding: 3px 6px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-weight: bold;
-    font-size: 13px;
-    user-select: none;
-  }
-  .win-titlebar-title { display: flex; align-items: center; gap: 6px; }
-  .win-icon { font-size: 14px; }
-  .win-controls { display: flex; gap: 2px; }
-  .win-btn {
-    width: 16px; height: 14px;
-    background: #C0C0C0;
-    border: 1px solid;
-    border-color: #FFFFFF #808080 #808080 #FFFFFF;
-    font-size: 9px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-family: "Courier New", monospace;
-    font-weight: bold;
-    color: #000000;
-    padding: 0;
-  }
-  .win-btn:active { border-color: #808080 #FFFFFF #FFFFFF #808080; }
-  .win-content { padding: 8px; }
-
-  /* Marquee banner */
-  #banner {
-    background: #000000;
-    color: #00FF00;
-    font-size: 12px;
-    padding: 2px 0;
-    overflow: hidden;
-    border: 2px solid;
-    border-color: #808080 #FFFFFF #FFFFFF #808080;
-    margin-bottom: 10px;
-  }
-  #banner-text {
-    display: inline-block;
-    white-space: nowrap;
-    animation: marquee 20s linear infinite;
-  }
-  @keyframes marquee { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
-
-  /* Chat area */
-  #chat-box {
-    height: 360px;
-    overflow-y: auto;
-    background: #000080;
-    border: 2px solid;
-    border-color: #808080 #FFFFFF #FFFFFF #808080;
-    padding: 8px;
-    margin-bottom: 8px;
-    scrollbar-width: thin;
-    scrollbar-color: #C0C0C0 #808080;
-  }
-  #chat-box::-webkit-scrollbar { width: 16px; }
-  #chat-box::-webkit-scrollbar-track { background: #808080; border: 1px solid #C0C0C0; }
-  #chat-box::-webkit-scrollbar-thumb {
-    background: #C0C0C0;
-    border: 2px solid;
-    border-color: #FFFFFF #808080 #808080 #FFFFFF;
-  }
-
-  .msg { margin-bottom: 10px; font-size: 13px; line-height: 1.5; }
-  .msg-header { font-size: 11px; margin-bottom: 2px; }
-  .msg-user .msg-header { color: #FFFF00; }
-  .msg-bot .msg-header { color: #00FF00; }
-  .msg-user .msg-body {
-    color: #FFFFFF;
-    background: #000080;
-    border-left: 3px solid #FFFF00;
-    padding-left: 6px;
-  }
-  .msg-bot .msg-body {
-    color: #00FF00;
-    background: #000080;
-    border-left: 3px solid #00FF00;
-    padding-left: 6px;
-  }
-  .msg-error .msg-header { color: #FF0000; }
-  .msg-error .msg-body { color: #FF8080; border-left: 3px solid #FF0000; padding-left: 6px; }
-
-  .cursor-blink::after {
-    content: '█';
-    animation: blink 0.6s infinite;
-    color: #00FF00;
-  }
-
-  /* Input area */
-  #input-area {
-    display: flex;
-    gap: 4px;
-    align-items: flex-end;
-  }
-  #user-input {
-    flex: 1;
-    background: #FFFFFF;
-    border: 2px solid;
-    border-color: #808080 #FFFFFF #FFFFFF #808080;
-    padding: 4px 6px;
-    font-family: "Courier New", monospace;
-    font-size: 13px;
-    color: #000000;
-    resize: none;
-    height: 52px;
-  }
-  #user-input:focus { outline: 1px dotted #000080; }
-  #send-btn {
-    background: #C0C0C0;
-    border: 2px solid;
-    border-color: #FFFFFF #808080 #808080 #FFFFFF;
-    padding: 6px 14px;
-    font-family: "Courier New", monospace;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    white-space: nowrap;
-    height: 52px;
-  }
-  #send-btn:hover { background: #D0D0D0; }
-  #send-btn:active { border-color: #808080 #FFFFFF #FFFFFF #808080; padding: 7px 13px 5px 15px; }
-  #send-btn:disabled { color: #808080; cursor: default; }
-
-  /* Status bar */
-  #status-bar {
-    display: flex;
-    gap: 2px;
-    margin-top: 6px;
-  }
-  .status-panel {
-    background: #C0C0C0;
-    border: 2px solid;
-    border-color: #808080 #FFFFFF #FFFFFF #808080;
-    padding: 1px 8px;
-    font-size: 11px;
-    flex: 1;
-  }
-
-  /* API key section */
-  #apikey-panel .win-content { padding: 10px; }
-  #api-key-input {
-    width: 100%;
-    background: #FFFFFF;
-    border: 2px solid;
-    border-color: #808080 #FFFFFF #FFFFFF #808080;
-    padding: 4px 6px;
-    font-family: "Courier New", monospace;
-    font-size: 12px;
-    color: #000000;
-    margin-bottom: 6px;
-  }
-  #api-key-input:focus { outline: 1px dotted #000080; }
-  .btn-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-  .win95-btn {
-    background: #C0C0C0;
-    border: 2px solid;
-    border-color: #FFFFFF #808080 #808080 #FFFFFF;
-    padding: 3px 14px;
-    font-family: "Courier New", monospace;
-    font-size: 12px;
-    cursor: pointer;
-  }
-  .win95-btn:active { border-color: #808080 #FFFFFF #FFFFFF #808080; }
-  #api-status { font-size: 11px; color: #808080; margin-left: 4px; }
-
-  /* Topic chips */
-  #topics { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
-  .topic-chip {
-    background: #000080;
-    color: #FFFFFF;
-    border: 1px solid #FFFFFF;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-family: "Courier New", monospace;
-    cursor: pointer;
-  }
-  .topic-chip:hover { background: #0000CD; }
-  .topic-chip:active { background: #000040; }
-
-  /* About section */
-  #about-panel .win-content {
-    font-size: 11px;
-    color: #000000;
-    line-height: 1.6;
-  }
-  #about-panel .win-content p { margin-bottom: 4px; }
-  .retro-hr {
-    border: none;
-    border-top: 1px solid #808080;
-    border-bottom: 1px solid #FFFFFF;
-    margin: 6px 0;
-  }
-
-  /* Welcome msg */
-  #welcome {
-    color: #FFFF00;
-    text-align: center;
-    font-size: 13px;
-    margin-bottom: 8px;
-    line-height: 1.8;
-  }
-
-  @media (max-width: 500px) {
-    #send-btn { padding: 4px 8px; font-size: 12px; }
-    #chat-box { height: 280px; }
-    #splash h1 { font-size: 28px; letter-spacing: 4px; }
-  }
+:root {
+  --black:    #0a0a0a;
+  --blood:    #8B0000;
+  --fire:     #FF2200;
+  --gold:     #FFD700;
+  --ember:    #FF6600;
+  --dark-red: #1a0000;
+  --gray:     #888;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--black);
+  color: #eee;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  overflow-x: hidden; position: relative;
+}
+.drip-container {
+  position: fixed; top: 0; bottom: 0; width: 38px;
+  pointer-events: none; z-index: 0; overflow: hidden;
+}
+.drip-container.left  { left: 0; }
+.drip-container.right { right: 0; }
+.drip {
+  position: absolute; top: -60px;
+  background: linear-gradient(to bottom, var(--blood), var(--fire));
+  border-radius: 0 0 50% 50%;
+  animation: drip-fall linear infinite;
+  opacity: 0.85;
+}
+.drip::after {
+  content: ''; position: absolute; bottom: -6px; left: 50%;
+  transform: translateX(-50%); width: 14px; height: 10px;
+  background: var(--blood); border-radius: 50%; opacity: 0.7;
+}
+@keyframes drip-fall {
+  0%   { transform: translateY(0); opacity: 0; }
+  10%  { opacity: 0.9; }
+  90%  { opacity: 0.9; }
+  100% { transform: translateY(110vh); opacity: 0; }
+}
+body::after {
+  content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 120px;
+  background: radial-gradient(ellipse at 50% 110%, rgba(255,60,0,0.35) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+#app {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 820px;
+  padding: 0 50px 60px;
+  display: flex; flex-direction: column; align-items: center;
+}
+#logo { text-align: center; padding: 28px 0 10px; user-select: none; }
+#logo .mk-title {
+  font-family: Impact, 'Arial Black', sans-serif;
+  font-size: clamp(36px, 8vw, 72px);
+  letter-spacing: 6px; text-transform: uppercase; color: var(--gold);
+  text-shadow: 0 0 12px var(--ember), 0 0 30px var(--fire), 3px 3px 0 var(--blood), 6px 6px 0 #400;
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+#logo .mk-sub {
+  font-family: Impact, sans-serif;
+  font-size: clamp(12px, 2.5vw, 17px);
+  letter-spacing: 10px; color: var(--fire); text-transform: uppercase;
+  margin-top: 2px; text-shadow: 0 0 8px var(--blood);
+}
+@keyframes pulse-glow {
+  0%,100% { text-shadow: 0 0 12px var(--ember),0 0 30px var(--fire),3px 3px 0 var(--blood),6px 6px 0 #400; }
+  50%      { text-shadow: 0 0 24px var(--gold),0 0 55px var(--ember),3px 3px 0 var(--blood),6px 6px 0 #400; }
+}
+#fight-flash {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.88); z-index: 999;
+  pointer-events: none; opacity: 0;
+}
+#fight-flash span {
+  font-family: Impact, sans-serif;
+  font-size: clamp(64px, 18vw, 160px); letter-spacing: 12px;
+  color: var(--gold);
+  text-shadow: 0 0 30px var(--fire), 0 0 60px var(--ember), 4px 4px 0 var(--blood);
+}
+.flash-anim { animation: flash-in 1.1s ease-out forwards; }
+@keyframes flash-in {
+  0%   { opacity: 0; transform: scale(1.6); }
+  15%  { opacity: 1; transform: scale(0.95); }
+  40%  { opacity: 1; transform: scale(1.02); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(0.8); }
+}
+#hud {
+  width: 100%; display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: 10px; margin: 14px 0 10px;
+}
+.fighter-name {
+  font-family: Impact, sans-serif; font-size: clamp(11px,2.5vw,16px);
+  letter-spacing: 2px; text-transform: uppercase; color: var(--gold);
+  text-shadow: 0 0 6px var(--ember);
+}
+.fighter-name.right { text-align: right; }
+.hp-wrap {
+  background: #111; border: 2px solid var(--blood);
+  height: 20px; position: relative; box-shadow: 0 0 8px var(--blood);
+}
+#hp-player .hp-wrap { direction: rtl; }
+.hp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blood), var(--fire), var(--gold));
+  transition: width 0.4s ease; width: 100%;
+}
+.hp-bar.low { background: linear-gradient(90deg, #300, var(--blood)); }
+.vs-badge {
+  font-family: Impact, sans-serif; font-size: clamp(14px,3vw,22px);
+  color: var(--fire); text-shadow: 0 0 10px var(--blood);
+  letter-spacing: 2px; white-space: nowrap;
+}
+.round-indicator { width: 100%; display: flex; justify-content: center; gap: 8px; margin-bottom: 10px; }
+.round-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--gold); background: transparent; transition: background 0.3s;
+}
+.round-dot.won { background: var(--gold); }
+#api-panel {
+  width: 100%;
+  background: linear-gradient(135deg, #110000, #1a0000);
+  border: 1px solid var(--blood);
+  box-shadow: 0 0 16px rgba(139,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.8);
+  padding: 14px 16px; margin-bottom: 12px;
+}
+.panel-title {
+  font-family: Impact, sans-serif; font-size: 13px;
+  letter-spacing: 4px; color: var(--fire); text-transform: uppercase;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.panel-title::before, .panel-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blood));
+}
+.panel-title::after { background: linear-gradient(90deg, var(--blood), transparent); }
+#api-key-input {
+  width: 100%; background: #050505; border: 1px solid var(--blood);
+  color: var(--ember); font-family: 'Courier New', monospace; font-size: 13px;
+  padding: 8px 10px; outline: none; margin-bottom: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+#api-key-input:focus { border-color: var(--fire); box-shadow: 0 0 10px rgba(255,34,0,0.4); }
+#api-key-input::placeholder { color: #444; }
+.btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.mk-btn {
+  font-family: Impact, sans-serif; font-size: 13px;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: linear-gradient(to bottom, #3a0000, #1a0000);
+  color: var(--gold); border: 2px solid var(--blood);
+  padding: 6px 18px; cursor: pointer;
+  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  transition: all 0.15s;
+}
+.mk-btn:hover {
+  background: linear-gradient(to bottom, var(--blood), #3a0000);
+  border-color: var(--fire); color: #fff; box-shadow: 0 0 14px var(--fire);
+}
+.mk-btn:active { transform: scale(0.96); }
+#api-status { font-size: 11px; font-family: 'Courier New', monospace; color: var(--gray); letter-spacing: 1px; }
+.moves-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.move-chip {
+  font-family: 'Courier New', monospace; font-size: 11px;
+  background: #0d0000; border: 1px solid #500;
+  color: var(--ember); padding: 3px 10px; cursor: pointer;
+  clip-path: polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);
+  transition: all 0.15s;
+}
+.move-chip:hover { background: var(--blood); border-color: var(--fire); color: #fff; }
+#arena-wrap {
+  width: 100%;
+  background: linear-gradient(180deg, #0d0000 0%, #050000 100%);
+  border: 1px solid var(--blood);
+  box-shadow: 0 0 24px rgba(139,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.9);
+  overflow: hidden;
+}
+#chat-box {
+  height: 360px; overflow-y: auto; padding: 14px;
+  display: flex; flex-direction: column; gap: 12px;
+  scrollbar-width: thin; scrollbar-color: var(--blood) #111;
+}
+#chat-box::-webkit-scrollbar { width: 6px; }
+#chat-box::-webkit-scrollbar-track { background: #111; }
+#chat-box::-webkit-scrollbar-thumb { background: var(--blood); border-radius: 3px; }
+#welcome-msg {
+  text-align: center; padding: 20px 10px;
+  font-family: Impact, sans-serif; letter-spacing: 3px; text-transform: uppercase;
+}
+#welcome-msg .w1 { font-size: 28px; color: var(--gold); text-shadow: 0 0 16px var(--fire); }
+#welcome-msg .w2 { font-size: 13px; color: var(--blood); margin-top: 6px; letter-spacing: 4px; }
+#welcome-msg .w3 {
+  font-size: 11px; color: #555; margin-top: 10px;
+  font-family: 'Courier New', monospace; font-weight: normal;
+  text-transform: none; letter-spacing: 1px;
+}
+.msg { display: flex; flex-direction: column; max-width: 88%; animation: msg-in 0.2s ease-out; }
+@keyframes msg-in { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+.msg.user { align-self: flex-end; align-items: flex-end; }
+.msg.bot  { align-self: flex-start; align-items: flex-start; }
+.msg-name {
+  font-family: Impact, sans-serif; font-size: 10px;
+  letter-spacing: 3px; text-transform: uppercase; margin-bottom: 3px;
+}
+.msg.user .msg-name { color: var(--gold); }
+.msg.bot  .msg-name { color: var(--fire); }
+.msg.error .msg-name { color: #ff0040; }
+.msg-body { padding: 8px 12px; font-size: 13px; line-height: 1.55; border-radius: 2px; }
+.msg.user .msg-body {
+  background: linear-gradient(135deg, #1a0000, #0d0000);
+  border: 1px solid var(--blood); border-right: 3px solid var(--gold); color: #ddd;
+}
+.msg.bot .msg-body {
+  background: linear-gradient(135deg, #0d0000, #160000);
+  border: 1px solid #400; border-left: 3px solid var(--fire); color: #ccc;
+}
+.msg.error .msg-body { border-left: 3px solid #ff0040; color: #ff6060; background: #0a0005; }
+#typing-indicator {
+  display: none; align-self: flex-start;
+  padding: 8px 14px; background: #0d0000;
+  border: 1px solid #400; border-left: 3px solid var(--fire);
+}
+#typing-indicator span {
+  display: inline-block; width: 6px; height: 6px;
+  background: var(--fire); border-radius: 50%; margin: 0 2px;
+  animation: bounce 1s infinite;
+}
+#typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+#typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+#input-zone { display: flex; border-top: 1px solid var(--blood); }
+#user-input {
+  flex: 1; background: #050000; border: none;
+  border-right: 1px solid var(--blood); color: var(--ember);
+  font-family: 'Courier New', monospace; font-size: 13px;
+  padding: 12px 14px; resize: none; height: 56px; outline: none;
+}
+#user-input:focus { background: #0a0000; }
+#user-input::placeholder { color: #333; }
+#send-btn {
+  font-family: Impact, sans-serif; font-size: 14px;
+  letter-spacing: 3px; text-transform: uppercase;
+  background: linear-gradient(to bottom, var(--blood), #3a0000);
+  color: var(--gold); border: none; padding: 0 22px;
+  cursor: pointer; transition: all 0.15s; min-width: 100px;
+}
+#send-btn:hover { background: linear-gradient(to bottom, var(--fire), var(--blood)); color: #fff; text-shadow: 0 0 8px #fff; }
+#send-btn:active { transform: scale(0.97); }
+#send-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+#kombat-log {
+  width: 100%; background: #050000; border: 1px solid #300;
+  border-top: none; padding: 4px 12px; font-size: 10px;
+  font-family: 'Courier New', monospace; color: #500;
+  letter-spacing: 1px; display: flex; justify-content: space-between;
+}
+#about-strip {
+  width: 100%; margin-top: 14px; background: #0d0000;
+  border: 1px solid #300; padding: 10px 14px;
+  font-size: 10px; color: #555; font-family: 'Courier New', monospace;
+  line-height: 1.7; text-align: center;
+}
+#about-strip a { color: var(--blood); text-decoration: none; }
+#about-strip a:hover { color: var(--fire); }
+@media (max-width: 560px) {
+  #app { padding: 0 44px 60px; }
+  #chat-box { height: 280px; }
+  #send-btn { min-width: 70px; padding: 0 12px; font-size: 12px; }
+}
 </style>
 </head>
 <body>
+<div class="drip-container left"  id="drips-left"></div>
+<div class="drip-container right" id="drips-right"></div>
+<div id="fight-flash"><span>FIGHT!</span></div>
 
-<!-- Splash Screen -->
-<div id="splash">
-  <h1>CYBERCHAT</h1>
-  <div style="color:#00FFFF; font-size:14px; margin-top:8px; letter-spacing:3px;">★ VERSION 2000 ★</div>
-  <div id="loading-bar-wrap">
-    <div id="loading-bar"></div>
+<div id="app">
+  <div id="logo">
+    <div class="mk-title">MORTAL CHAT</div>
+    <div class="mk-sub">Finish Him &middot; AI Edition</div>
   </div>
-  <div id="loading-text">NAČÍTÁNÍ SYSTÉMU<span class="blink">_</span></div>
-  <div id="splash-msg" style="color:#C0C0C0; font-size:11px; margin-top:16px; letter-spacing:1px;">Inicializace neuronových sítí...</div>
+
+  <div id="hud">
+    <div id="hp-player">
+      <div class="fighter-name">BOJOVN&Iacute;K</div>
+      <div class="hp-wrap"><div class="hp-bar" id="hp-bar-player"></div></div>
+    </div>
+    <div>
+      <div class="vs-badge">VS</div>
+      <div class="round-indicator">
+        <div class="round-dot" id="rd1"></div>
+        <div class="round-dot" id="rd2"></div>
+        <div class="round-dot" id="rd3"></div>
+      </div>
+    </div>
+    <div id="hp-enemy">
+      <div class="fighter-name right">AI ORACLE</div>
+      <div class="hp-wrap"><div class="hp-bar" id="hp-bar-enemy"></div></div>
+    </div>
+  </div>
+
+  <div id="api-panel">
+    <div class="panel-title">&#x26A1; P&#345;&#237;stupov&#253; K&#243;d &#x26A1;</div>
+    <input type="password" id="api-key-input" placeholder="Zadejte sv&#367;j Anthropic API kl&#237;&#269; (sk-ant-...)">
+    <div class="btn-row">
+      <button class="mk-btn" onclick="saveKey()">&#9654; ENTER KOMBAT</button>
+      <button class="mk-btn" onclick="clearKey()">&#10005; RETREAT</button>
+      <span id="api-status">[ OFFLINE ]</span>
+    </div>
+    <div class="moves-row">
+      <span class="move-chip" onclick="setMove('Kdo jsi a jak&eacute; jsou tv&eacute; schopnosti?')">&#x1F97A; P&#345;edstaven&iacute;</span>
+      <span class="move-chip" onclick="setMove('Řekni mi vtip ve stylu Mortal Kombat.')">&#x1F480; Vtip</span>
+      <span class="move-chip" onclick="setMove('Vysvětli mi, jak funguje umělá inteligence.')">&#x1F9E0; AI teorie</span>
+      <span class="move-chip" onclick="setMove('Napiš básničku o boji a osudu.')">&#x2694;&#xFE0F; Báseň</span>
+      <span class="move-chip" onclick="setMove('Jaké jsou tvé nejsilnější schopnosti?')">&#x1F525; Fatality</span>
+      <span class="move-chip" onclick="setMove('Poraď mi, jak se stát lepším programátorem.')">&#x1F4BB; Kód</span>
+    </div>
+  </div>
+
+  <div id="arena-wrap">
+    <div id="chat-box">
+      <div id="welcome-msg">
+        <div class="w1">&#x2694; Vyberte sv&eacute;ho bojovn&iacute;ka &#x2694;</div>
+        <div class="w2">Zadejte API kl&iacute;&#269; a za&#269;n&#283;te</div>
+        <div class="w3">Napi&#353;te zpr&aacute;vu &middot; Stiskn&#283;te Enter nebo &Uacute;TOK &middot; Zv&#237;t&#283;zte v konverzaci</div>
+      </div>
+    </div>
+    <div id="typing-indicator"><span></span><span></span><span></span></div>
+    <div id="input-zone">
+      <textarea id="user-input" placeholder="Napište zprávu... (Enter = odeslat, Shift+Enter = nový řádek)" onkeydown="handleKey(event)"></textarea>
+      <button id="send-btn" onclick="sendMessage()">&#x2694; &Uacute;TOK</button>
+    </div>
+    <div id="kombat-log">
+      <span id="log-left">&#9654; CHOOSE YOUR DESTINY</span>
+      <span id="log-right">ZPRÁVY: 0</span>
+    </div>
+  </div>
+
+  <div id="about-strip">
+    &#x26A0; API kl&iacute;&#269; je ulo&#382;en pouze v pam&#283;ti relace (sessionStorage) &mdash; po zav&#345;en&iacute; okna se sma&#382;e &nbsp;|&nbsp;
+    Kl&iacute;&#269; z&iacute;sk&aacute;te na <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+  </div>
 </div>
-
-<!-- Taskbar -->
-<div id="taskbar">
-  <button id="start-btn">⊞ Start</button>
-  <div class="taskbar-item">💬 CyberChat 2000</div>
-  <div id="clock">12:00</div>
-</div>
-
-<!-- Banner -->
-<div id="banner">
-  <span id="banner-text">★ VÍTEJTE V CYBERCHAT 2000 ★ Nejmodernější AI chatbot na internetu! ★ Napájeno umělou inteligencí ★ Kompatibilní s Internet Explorer 4.0 ★ Best viewed at 800x600 ★ Nyní s podporou češtiny! ★</span>
-</div>
-
-<!-- Main Window -->
-<div id="main-window">
-
-  <!-- API Key Window -->
-  <div class="win-window" id="apikey-panel">
-    <div class="win-titlebar">
-      <div class="win-titlebar-title"><span class="win-icon">🔑</span> Nastavení připojení</div>
-      <div class="win-controls">
-        <button class="win-btn">_</button>
-        <button class="win-btn">□</button>
-        <button class="win-btn">✕</button>
-      </div>
-    </div>
-    <div class="win-content">
-      <div style="font-size:11px; color:#000080; margin-bottom:4px;">▶ Zadejte váš Anthropic API klíč pro aktivaci chatbota:</div>
-      <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
-      <div class="btn-row">
-        <button class="win95-btn" onclick="saveApiKey()">✓ Připojit</button>
-        <button class="win95-btn" onclick="clearApiKey()">✕ Odpojit</button>
-        <span id="api-status">[ Nepřipojeno ]</span>
-      </div>
-      <div id="topics">
-        <span style="font-size:11px; color:#808080;">Rychlé téma:</span>
-        <span class="topic-chip" onclick="setTopic('Vysvětli mi, co je to umělá inteligence.')">🤖 AI</span>
-        <span class="topic-chip" onclick="setTopic('Řekni mi vtip.')">😄 Vtip</span>
-        <span class="topic-chip" onclick="setTopic('Popiš rok 1999 na internetu.')">🌐 Retro web</span>
-        <span class="topic-chip" onclick="setTopic('Napiš mi básničku o počítačích.')">📝 Básnička</span>
-        <span class="topic-chip" onclick="setTopic('Jaké jsou nejlepší hry pro PC z 90. let?')">🎮 90s hry</span>
-        <span class="topic-chip" onclick="setTopic('Jak funguje internet?')">❓ Internet</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Chat Window -->
-  <div class="win-window" id="chat-panel">
-    <div class="win-titlebar">
-      <div class="win-titlebar-title"><span class="win-icon">💬</span> CyberChat 2000 — Konverzace</div>
-      <div class="win-controls">
-        <button class="win-btn">_</button>
-        <button class="win-btn">□</button>
-        <button class="win-btn" onclick="clearChat()">✕</button>
-      </div>
-    </div>
-    <div class="win-content">
-      <div id="chat-box">
-        <div id="welcome">
-          ╔══════════════════════════════╗<br>
-          ║   CYBERCHAT 2000 ONLINE!    ║<br>
-          ╚══════════════════════════════╝<br>
-          <span style="color:#00FF00; font-size:12px;">Zadejte API klíč a začněte chatovat...</span>
-        </div>
-      </div>
-      <div id="input-area">
-        <textarea id="user-input" placeholder="Napište zprávu a stiskněte ODESLAT nebo Enter..." onkeydown="handleKey(event)"></textarea>
-        <button id="send-btn" onclick="sendMessage()">📨 ODESLAT</button>
-      </div>
-      <div id="status-bar">
-        <div class="status-panel" id="status-left">Připraveno</div>
-        <div class="status-panel" id="status-right">Zprávy: 0</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- About Window -->
-  <div class="win-window" id="about-panel">
-    <div class="win-titlebar">
-      <div class="win-titlebar-title"><span class="win-icon">ℹ️</span> O programu CyberChat 2000</div>
-      <div class="win-controls">
-        <button class="win-btn">_</button>
-        <button class="win-btn">□</button>
-        <button class="win-btn">✕</button>
-      </div>
-    </div>
-    <div class="win-content">
-      <p>⚡ <strong>CyberChat 2000</strong> — revolucionární AI chatbot pro nové tisíciletí!</p>
-      <div class="retro-hr"></div>
-      <p>🔑 Potřebujete API klíč z <strong>console.anthropic.com</strong></p>
-      <p>🌐 Váš klíč je uložen pouze v paměti prohlížeče (sessionStorage)</p>
-      <p>💾 Klíč se po zavření okna smaže</p>
-      <div class="retro-hr"></div>
-      <p style="color:#808080;">© 2000 CyberSoft Inc. | Best viewed 800×600 | Netscape 4+ | IE 4+</p>
-    </div>
-  </div>
-
-</div><!-- /main-window -->
 
 <script>
-// ─── State ───────────────────────────────────────────────────
-let apiKey = sessionStorage.getItem('cyberchat_key') || '';
+(function buildDrips() {
+  ['drips-left','drips-right'].forEach(id => {
+    const c = document.getElementById(id);
+    for (let i = 0; i < 7; i++) {
+      const d = document.createElement('div');
+      d.className = 'drip';
+      d.style.cssText = `left:${Math.random()*22+4}px;width:${Math.random()*5+6}px;height:${Math.random()*60+30}px;animation-duration:${Math.random()*5+4}s;animation-delay:${Math.random()*6}s;`;
+      c.appendChild(d);
+    }
+  });
+})();
+
+let apiKey = sessionStorage.getItem('mk_key') || '';
 let messages = [];
 let msgCount = 0;
+let firstFight = true;
 let isTyping = false;
+let playerHP = 100, enemyHP = 100, roundsWon = 0;
 
-const SYSTEM_PROMPT = `Jsi CyberBot 2000, retro AI asistent stylizovaný do roku 2000. Komunikuješ česky nebo jazykem uživatele. Jsi nadšený z internetu, počítačů a technologií 90. let. Občas použiješ retro výrazy jako "surfování na internetu", "cyberspace", "information superhighway". Jsi přátelský, vtipný a velmi nápomocný. Odpovídej stručně a přehledně.`;
-
-// ─── Splash ───────────────────────────────────────────────────
-const splashMsgs = [
-  'Inicializace neuronových sítí...',
-  'Načítání jazykových modulů...',
-  'Kalibrování cyberspace rozhraní...',
-  'Připojování k information superhighway...',
-  'Spouštění CyberChat 2000...',
-];
-let splashIdx = 0;
-let loadPct = 0;
-
-function runSplash() {
-  const bar = document.getElementById('loading-bar');
-  const msg = document.getElementById('splash-msg');
-  const interval = setInterval(() => {
-    loadPct += Math.random() * 6 + 2;
-    if (loadPct >= 100) { loadPct = 100; clearInterval(interval); }
-    bar.style.width = loadPct + '%';
-    if (loadPct > splashIdx * 20 && splashIdx < splashMsgs.length) {
-      msg.textContent = splashMsgs[splashIdx++];
-    }
-    if (loadPct >= 100) {
-      setTimeout(() => {
-        document.getElementById('splash').style.display = 'none';
-      }, 600);
-    }
-  }, 60);
-}
-runSplash();
-
-// ─── Clock ────────────────────────────────────────────────────
-function updateClock() {
-  const now = new Date();
-  const h = now.getHours().toString().padStart(2,'0');
-  const m = now.getMinutes().toString().padStart(2,'0');
-  document.getElementById('clock').textContent = h + ':' + m;
-}
-updateClock();
-setInterval(updateClock, 10000);
-
-// ─── API Key ─────────────────────────────────────────────────
-function saveApiKey() {
-  const val = document.getElementById('api-key-input').value.trim();
-  if (!val.startsWith('sk-')) {
-    setStatus('⚠ Neplatný formát klíče!', 'red'); return;
-  }
-  apiKey = val;
-  sessionStorage.setItem('cyberchat_key', val);
-  document.getElementById('api-key-input').value = '●'.repeat(20);
-  document.getElementById('api-status').style.color = '#008000';
-  document.getElementById('api-status').textContent = '[ ✓ Připojeno ]';
-  setStatus('API klíč uložen. Systém připraven!');
-  appendBot('Zdravím! Jsem CyberBot 2000 🤖 Jsem připraven surfovat s vámi po information superhighway! O čem si popovídáme?');
-}
-
-function clearApiKey() {
-  apiKey = '';
-  sessionStorage.removeItem('cyberchat_key');
-  document.getElementById('api-key-input').value = '';
-  document.getElementById('api-status').style.color = '#808080';
-  document.getElementById('api-status').textContent = '[ Nepřipojeno ]';
-  setStatus('Odpojeno.');
-}
+const SYSTEM = `Jsi AI Oracle — tajemný bojovník z říše digitálních dimenzí. Mluvíš dramaticky, občas zmíníš osud, čest nebo sílu. Ale hlavně jsi nesmírně užitečný asistent — odpovídáš věcně a přesně, jen tvůj tón je épický jako ve hře Mortal Kombat. Komunikuješ česky nebo jazykem uživatele. Odpovědi jsou výstižné, ale s charakterem.`;
 
 if (apiKey) {
-  document.getElementById('api-key-input').value = '●'.repeat(20);
-  document.getElementById('api-status').style.color = '#008000';
-  document.getElementById('api-status').textContent = '[ ✓ Připojeno ]';
-  setStatus('API klíč nalezen v paměti. Připraveno!');
+  document.getElementById('api-key-input').value = '●'.repeat(24);
+  setStatus('[ ONLINE — PŘIPRAVENO ]', '#a00');
 }
 
-// ─── Chat ─────────────────────────────────────────────────────
+function updateHP() {
+  const pb = document.getElementById('hp-bar-player');
+  const eb = document.getElementById('hp-bar-enemy');
+  pb.style.width = Math.max(0, playerHP) + '%';
+  eb.style.width = Math.max(0, enemyHP) + '%';
+  pb.classList.toggle('low', playerHP < 30);
+  eb.classList.toggle('low', enemyHP < 30);
+}
+
+function damageHP() {
+  const dmg = Math.floor(Math.random() * 8 + 3);
+  if (Math.random() > 0.5) playerHP -= dmg; else enemyHP -= dmg;
+  playerHP = Math.max(0, playerHP); enemyHP = Math.max(0, enemyHP);
+  updateHP();
+  if (msgCount % 5 === 0 && roundsWon < 3) {
+    const dot = document.getElementById('rd' + (roundsWon + 1));
+    if (dot) dot.classList.add('won');
+    roundsWon++;
+    setTimeout(() => { playerHP = 100; enemyHP = 100; updateHP(); }, 800);
+  }
+}
+
+function saveKey() {
+  const v = document.getElementById('api-key-input').value.trim();
+  if (!v.startsWith('sk-')) { setLog('⚠ Neplatný klíč — ZKUSTE ZNOVU', 'var(--fire)'); return; }
+  apiKey = v;
+  sessionStorage.setItem('mk_key', v);
+  document.getElementById('api-key-input').value = '●'.repeat(24);
+  setStatus('[ ONLINE — KOMBAT ZAHÁJEN ]', 'var(--fire)');
+  setLog('▶ SPOJENÍ NAVÁZÁNO', 'var(--ember)');
+  appendBot('Tvůj zápas byl přijat, bojovníku... Jsem AI Oracle. Moje vědomosti jsou bez hranic. Co si přeješ vědět? 🔥');
+}
+
+function clearKey() {
+  apiKey = ''; sessionStorage.removeItem('mk_key');
+  document.getElementById('api-key-input').value = '';
+  setStatus('[ OFFLINE ]', 'var(--gray)');
+  setLog('▶ ODPOJENO', 'var(--gray)');
+}
+
+function setStatus(t, c) {
+  const el = document.getElementById('api-status');
+  el.textContent = t; el.style.color = c || 'var(--gray)';
+}
+function setLog(txt, col) {
+  const el = document.getElementById('log-left');
+  el.textContent = txt; el.style.color = col || '#500';
+}
+function updateCount() {
+  document.getElementById('log-right').textContent = 'ZPRÁVY: ' + msgCount;
+}
+function esc(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+function getTime() {
+  const n = new Date();
+  return n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');
+}
+function scrollBottom() {
+  const b = document.getElementById('chat-box'); b.scrollTop = b.scrollHeight;
+}
+function appendUser(text) {
+  const box = document.getElementById('chat-box');
+  const w = document.getElementById('welcome-msg'); if (w) w.remove();
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = '<div class="msg-name">Bojovník — '+getTime()+'</div><div class="msg-body">'+esc(text)+'</div>';
+  box.appendChild(div); msgCount++; updateCount(); scrollBottom();
+}
+function appendBot(text, isError) {
+  const box = document.getElementById('chat-box');
+  const w = document.getElementById('welcome-msg'); if (w) w.remove();
+  const div = document.createElement('div');
+  div.className = 'msg ' + (isError ? 'error' : 'bot');
+  const name = isError ? '⚠ SYSTÉMOVÁ CHYBA' : 'AI Oracle — '+getTime();
+  div.innerHTML = '<div class="msg-name">'+name+'</div><div class="msg-body">'+esc(text)+'</div>';
+  box.appendChild(div); msgCount++; updateCount(); scrollBottom();
+}
+function setTyping(on) {
+  document.getElementById('typing-indicator').style.display = on ? 'flex' : 'none';
+  if (on) scrollBottom();
+}
+function showFight() {
+  const overlay = document.getElementById('fight-flash');
+  const span = overlay.querySelector('span');
+  overlay.style.opacity = '1'; overlay.style.pointerEvents = 'auto';
+  span.parentElement.classList.add('flash-anim');
+  setTimeout(() => {
+    overlay.style.opacity = '0'; overlay.style.pointerEvents = 'none';
+    span.parentElement.classList.remove('flash-anim');
+  }, 1200);
+}
 function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
-
-function setTopic(text) {
-  document.getElementById('user-input').value = text;
+function setMove(t) {
+  document.getElementById('user-input').value = t;
   document.getElementById('user-input').focus();
 }
-
-function setStatus(text, color) {
-  const el = document.getElementById('status-left');
-  el.textContent = text;
-  el.style.color = color || '#000000';
-}
-
-function updateMsgCount() {
-  document.getElementById('status-right').textContent = 'Zprávy: ' + msgCount;
-}
-
-function scrollBottom() {
-  const box = document.getElementById('chat-box');
-  box.scrollTop = box.scrollHeight;
-}
-
-function appendUser(text) {
-  const box = document.getElementById('chat-box');
-  const div = document.createElement('div');
-  div.className = 'msg msg-user';
-  div.innerHTML = `<div class="msg-header">► VY [${getTime()}]</div><div class="msg-body">${escHtml(text)}</div>`;
-  box.appendChild(div);
-  msgCount++;
-  updateMsgCount();
-  scrollBottom();
-}
-
-function appendBot(text, streaming) {
-  const box = document.getElementById('chat-box');
-  const id = 'bot-' + Date.now();
-  const div = document.createElement('div');
-  div.className = 'msg msg-bot';
-  div.id = id;
-  const bodyId = id + '-body';
-  div.innerHTML = `<div class="msg-header">◄ CYBERBOT [${getTime()}]</div><div class="msg-body" id="${bodyId}">${streaming ? '<span class="cursor-blink"></span>' : escHtml(text)}</div>`;
-  box.appendChild(div);
-  msgCount++;
-  updateMsgCount();
-  scrollBottom();
-  return bodyId;
-}
-
-function appendError(text) {
-  const box = document.getElementById('chat-box');
-  const div = document.createElement('div');
-  div.className = 'msg msg-error';
-  div.innerHTML = `<div class="msg-header">⚠ CHYBA SYSTÉMU [${getTime()}]</div><div class="msg-body">${escHtml(text)}</div>`;
-  box.appendChild(div);
-  scrollBottom();
-}
-
-function getTime() {
-  const n = new Date();
-  return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
-}
-
-function escHtml(t) {
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-}
-
 async function sendMessage() {
   if (isTyping) return;
-  if (!apiKey) { appendError('Nejprve zadejte API klíč v sekci Nastavení!'); return; }
+  if (!apiKey) { appendBot('Nejprve zadejte API klíč, bojovníku! Bez přístupového kódu nelze vstoupit do arény.', true); return; }
   const input = document.getElementById('user-input');
   const text = input.value.trim();
   if (!text) return;
-
   input.value = '';
+  if (firstFight) { showFight(); firstFight = false; }
   appendUser(text);
   messages.push({ role: 'user', content: text });
-
+  damageHP();
   isTyping = true;
   document.getElementById('send-btn').disabled = true;
-  setStatus('⌛ CyberBot přemýšlí...');
-
-  const bodyId = appendBot('', true);
-  const bodyEl = document.getElementById(bodyId);
-
+  setTyping(true);
+  setLog('⚡ AI Oracle přemýšlí...', 'var(--ember)');
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -644,43 +505,30 @@ async function sendMessage() {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1000,
-        system: SYSTEM_PROMPT,
+        system: SYSTEM,
         messages: messages
       })
     });
-
+    setTyping(false);
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message || 'HTTP '+res.status);
     }
-
     const data = await res.json();
     const reply = data.content?.[0]?.text || '(prázdná odpověď)';
-    bodyEl.innerHTML = escHtml(reply);
+    appendBot(reply);
     messages.push({ role: 'assistant', content: reply });
-    setStatus('✓ Zpráva přijata');
-  } catch (err) {
-    bodyEl.innerHTML = '';
-    bodyEl.closest('.msg').className = 'msg msg-error';
-    bodyEl.closest('.msg').querySelector('.msg-header').textContent = `⚠ CHYBA SYSTÉMU [${getTime()}]`;
-    bodyEl.textContent = 'Chyba: ' + err.message;
-    setStatus('⚠ Chyba připojení', 'red');
-    messages.pop(); // remove user msg if failed
+    setLog('▶ ODPOVĚĎ PŘIJATA', 'var(--fire)');
+    damageHP();
+  } catch(err) {
+    setTyping(false);
+    appendBot('Systém selhal: ' + err.message, true);
+    setLog('⚠ CHYBA SPOJENÍ', '#f04');
+    if (messages[messages.length-1]?.role === 'user') messages.pop();
   } finally {
     isTyping = false;
     document.getElementById('send-btn').disabled = false;
-    scrollBottom();
   }
-}
-
-function clearChat() {
-  if (!confirm('Smazat celou konverzaci?')) return;
-  messages = [];
-  msgCount = 0;
-  updateMsgCount();
-  const box = document.getElementById('chat-box');
-  box.innerHTML = '<div id="welcome" style="color:#FFFF00; text-align:center; font-size:13px; line-height:1.8;">╔══════════════════════════════╗<br>║   CYBERCHAT 2000 ONLINE!    ║<br>╚══════════════════════════════╝<br><span style=\"color:#00FF00; font-size:12px;\">Konverzace byla vymazána.</span></div>';
-  setStatus('Konverzace vymazána.');
 }
 </script>
 </body>
