@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberChat 2000 - AI Chatbot</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: #008080;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0,0,0,0.05) 1px, rgba(0,0,0,0.05) 2px),
+      repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(0,0,0,0.05) 1px, rgba(0,0,0,0.05) 2px);
+    font-family: "Courier New", Courier, monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+  }
+
+  /* Taskbar */
+  #taskbar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 32px;
+    background: #C0C0C0;
+    border-top: 2px solid #FFFFFF;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    gap: 6px;
+    z-index: 1000;
+  }
+  #start-btn {
+    background: #C0C0C0;
+    border: 2px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+    padding: 2px 10px;
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  #start-btn:active { border-color: #808080 #FFFFFF #FFFFFF #808080; }
+  #clock {
+    margin-left: auto;
+    background: #C0C0C0;
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+  .taskbar-item {
+    background: #C0C0C0;
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-family: "Courier New", monospace;
+  }
+
+  /* Splash screen */
+  #splash {
+    position: fixed;
+    inset: 0;
+    background: #000080;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    color: #FFFFFF;
+  }
+  #splash h1 {
+    font-size: 48px;
+    letter-spacing: 8px;
+    color: #FFFFFF;
+    text-shadow: 4px 4px #FF00FF, -2px -2px #00FFFF;
+    animation: glitch 1.5s infinite;
+  }
+  @keyframes glitch {
+    0%, 90%, 100% { text-shadow: 4px 4px #FF00FF, -2px -2px #00FFFF; }
+    92% { text-shadow: -4px 4px #FF00FF, 2px -2px #00FFFF; transform: translateX(2px); }
+    94% { text-shadow: 4px -4px #00FFFF, -2px 2px #FF00FF; transform: translateX(-2px); }
+    96% { text-shadow: 4px 4px #FF00FF, -2px -2px #00FFFF; transform: translateX(0); }
+  }
+  #loading-bar-wrap {
+    margin-top: 30px;
+    width: 400px;
+    max-width: 90vw;
+    border: 2px solid #FFFFFF;
+    padding: 3px;
+  }
+  #loading-bar {
+    height: 20px;
+    background: #0000FF;
+    width: 0%;
+    transition: width 0.05s linear;
+    position: relative;
+    overflow: hidden;
+  }
+  #loading-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.3) 0px,
+      rgba(255,255,255,0.3) 10px,
+      transparent 10px,
+      transparent 20px
+    );
+  }
+  #loading-text {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #FFFF00;
+    letter-spacing: 2px;
+  }
+  .blink { animation: blink 0.7s infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Main window */
+  #main-window {
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 40px;
+  }
+
+  /* Win95 window */
+  .win-window {
+    background: #C0C0C0;
+    border: 2px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+    box-shadow: 2px 2px 0 #000000;
+    margin-bottom: 10px;
+  }
+  .win-titlebar {
+    background: linear-gradient(90deg, #000080, #1084D0);
+    color: #FFFFFF;
+    padding: 3px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 13px;
+    user-select: none;
+  }
+  .win-titlebar-title { display: flex; align-items: center; gap: 6px; }
+  .win-icon { font-size: 14px; }
+  .win-controls { display: flex; gap: 2px; }
+  .win-btn {
+    width: 16px; height: 14px;
+    background: #C0C0C0;
+    border: 1px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+    font-size: 9px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+    color: #000000;
+    padding: 0;
+  }
+  .win-btn:active { border-color: #808080 #FFFFFF #FFFFFF #808080; }
+  .win-content { padding: 8px; }
+
+  /* Marquee banner */
+  #banner {
+    background: #000000;
+    color: #00FF00;
+    font-size: 12px;
+    padding: 2px 0;
+    overflow: hidden;
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+    margin-bottom: 10px;
+  }
+  #banner-text {
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee 20s linear infinite;
+  }
+  @keyframes marquee { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+
+  /* Chat area */
+  #chat-box {
+    height: 360px;
+    overflow-y: auto;
+    background: #000080;
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+    padding: 8px;
+    margin-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: #C0C0C0 #808080;
+  }
+  #chat-box::-webkit-scrollbar { width: 16px; }
+  #chat-box::-webkit-scrollbar-track { background: #808080; border: 1px solid #C0C0C0; }
+  #chat-box::-webkit-scrollbar-thumb {
+    background: #C0C0C0;
+    border: 2px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+  }
+
+  .msg { margin-bottom: 10px; font-size: 13px; line-height: 1.5; }
+  .msg-header { font-size: 11px; margin-bottom: 2px; }
+  .msg-user .msg-header { color: #FFFF00; }
+  .msg-bot .msg-header { color: #00FF00; }
+  .msg-user .msg-body {
+    color: #FFFFFF;
+    background: #000080;
+    border-left: 3px solid #FFFF00;
+    padding-left: 6px;
+  }
+  .msg-bot .msg-body {
+    color: #00FF00;
+    background: #000080;
+    border-left: 3px solid #00FF00;
+    padding-left: 6px;
+  }
+  .msg-error .msg-header { color: #FF0000; }
+  .msg-error .msg-body { color: #FF8080; border-left: 3px solid #FF0000; padding-left: 6px; }
+
+  .cursor-blink::after {
+    content: '█';
+    animation: blink 0.6s infinite;
+    color: #00FF00;
+  }
+
+  /* Input area */
+  #input-area {
+    display: flex;
+    gap: 4px;
+    align-items: flex-end;
+  }
+  #user-input {
+    flex: 1;
+    background: #FFFFFF;
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+    padding: 4px 6px;
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    color: #000000;
+    resize: none;
+    height: 52px;
+  }
+  #user-input:focus { outline: 1px dotted #000080; }
+  #send-btn {
+    background: #C0C0C0;
+    border: 2px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+    padding: 6px 14px;
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    height: 52px;
+  }
+  #send-btn:hover { background: #D0D0D0; }
+  #send-btn:active { border-color: #808080 #FFFFFF #FFFFFF #808080; padding: 7px 13px 5px 15px; }
+  #send-btn:disabled { color: #808080; cursor: default; }
+
+  /* Status bar */
+  #status-bar {
+    display: flex;
+    gap: 2px;
+    margin-top: 6px;
+  }
+  .status-panel {
+    background: #C0C0C0;
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+    padding: 1px 8px;
+    font-size: 11px;
+    flex: 1;
+  }
+
+  /* API key section */
+  #apikey-panel .win-content { padding: 10px; }
+  #api-key-input {
+    width: 100%;
+    background: #FFFFFF;
+    border: 2px solid;
+    border-color: #808080 #FFFFFF #FFFFFF #808080;
+    padding: 4px 6px;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+    color: #000000;
+    margin-bottom: 6px;
+  }
+  #api-key-input:focus { outline: 1px dotted #000080; }
+  .btn-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .win95-btn {
+    background: #C0C0C0;
+    border: 2px solid;
+    border-color: #FFFFFF #808080 #808080 #FFFFFF;
+    padding: 3px 14px;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .win95-btn:active { border-color: #808080 #FFFFFF #FFFFFF #808080; }
+  #api-status { font-size: 11px; color: #808080; margin-left: 4px; }
+
+  /* Topic chips */
+  #topics { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+  .topic-chip {
+    background: #000080;
+    color: #FFFFFF;
+    border: 1px solid #FFFFFF;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-family: "Courier New", monospace;
+    cursor: pointer;
+  }
+  .topic-chip:hover { background: #0000CD; }
+  .topic-chip:active { background: #000040; }
+
+  /* About section */
+  #about-panel .win-content {
+    font-size: 11px;
+    color: #000000;
+    line-height: 1.6;
+  }
+  #about-panel .win-content p { margin-bottom: 4px; }
+  .retro-hr {
+    border: none;
+    border-top: 1px solid #808080;
+    border-bottom: 1px solid #FFFFFF;
+    margin: 6px 0;
+  }
+
+  /* Welcome msg */
+  #welcome {
+    color: #FFFF00;
+    text-align: center;
+    font-size: 13px;
+    margin-bottom: 8px;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 500px) {
+    #send-btn { padding: 4px 8px; font-size: 12px; }
+    #chat-box { height: 280px; }
+    #splash h1 { font-size: 28px; letter-spacing: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div id="splash">
+  <h1>CYBERCHAT</h1>
+  <div style="color:#00FFFF; font-size:14px; margin-top:8px; letter-spacing:3px;">★ VERSION 2000 ★</div>
+  <div id="loading-bar-wrap">
+    <div id="loading-bar"></div>
+  </div>
+  <div id="loading-text">NAČÍTÁNÍ SYSTÉMU<span class="blink">_</span></div>
+  <div id="splash-msg" style="color:#C0C0C0; font-size:11px; margin-top:16px; letter-spacing:1px;">Inicializace neuronových sítí...</div>
+</div>
+
+<!-- Taskbar -->
+<div id="taskbar">
+  <button id="start-btn">⊞ Start</button>
+  <div class="taskbar-item">💬 CyberChat 2000</div>
+  <div id="clock">12:00</div>
+</div>
+
+<!-- Banner -->
+<div id="banner">
+  <span id="banner-text">★ VÍTEJTE V CYBERCHAT 2000 ★ Nejmodernější AI chatbot na internetu! ★ Napájeno umělou inteligencí ★ Kompatibilní s Internet Explorer 4.0 ★ Best viewed at 800x600 ★ Nyní s podporou češtiny! ★</span>
+</div>
+
+<!-- Main Window -->
+<div id="main-window">
+
+  <!-- API Key Window -->
+  <div class="win-window" id="apikey-panel">
+    <div class="win-titlebar">
+      <div class="win-titlebar-title"><span class="win-icon">🔑</span> Nastavení připojení</div>
+      <div class="win-controls">
+        <button class="win-btn">_</button>
+        <button class="win-btn">□</button>
+        <button class="win-btn">✕</button>
+      </div>
+    </div>
+    <div class="win-content">
+      <div style="font-size:11px; color:#000080; margin-bottom:4px;">▶ Zadejte váš Anthropic API klíč pro aktivaci chatbota:</div>
+      <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+      <div class="btn-row">
+        <button class="win95-btn" onclick="saveApiKey()">✓ Připojit</button>
+        <button class="win95-btn" onclick="clearApiKey()">✕ Odpojit</button>
+        <span id="api-status">[ Nepřipojeno ]</span>
+      </div>
+      <div id="topics">
+        <span style="font-size:11px; color:#808080;">Rychlé téma:</span>
+        <span class="topic-chip" onclick="setTopic('Vysvětli mi, co je to umělá inteligence.')">🤖 AI</span>
+        <span class="topic-chip" onclick="setTopic('Řekni mi vtip.')">😄 Vtip</span>
+        <span class="topic-chip" onclick="setTopic('Popiš rok 1999 na internetu.')">🌐 Retro web</span>
+        <span class="topic-chip" onclick="setTopic('Napiš mi básničku o počítačích.')">📝 Básnička</span>
+        <span class="topic-chip" onclick="setTopic('Jaké jsou nejlepší hry pro PC z 90. let?')">🎮 90s hry</span>
+        <span class="topic-chip" onclick="setTopic('Jak funguje internet?')">❓ Internet</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Window -->
+  <div class="win-window" id="chat-panel">
+    <div class="win-titlebar">
+      <div class="win-titlebar-title"><span class="win-icon">💬</span> CyberChat 2000 — Konverzace</div>
+      <div class="win-controls">
+        <button class="win-btn">_</button>
+        <button class="win-btn">□</button>
+        <button class="win-btn" onclick="clearChat()">✕</button>
+      </div>
+    </div>
+    <div class="win-content">
+      <div id="chat-box">
+        <div id="welcome">
+          ╔══════════════════════════════╗<br>
+          ║   CYBERCHAT 2000 ONLINE!    ║<br>
+          ╚══════════════════════════════╝<br>
+          <span style="color:#00FF00; font-size:12px;">Zadejte API klíč a začněte chatovat...</span>
+        </div>
+      </div>
+      <div id="input-area">
+        <textarea id="user-input" placeholder="Napište zprávu a stiskněte ODESLAT nebo Enter..." onkeydown="handleKey(event)"></textarea>
+        <button id="send-btn" onclick="sendMessage()">📨 ODESLAT</button>
+      </div>
+      <div id="status-bar">
+        <div class="status-panel" id="status-left">Připraveno</div>
+        <div class="status-panel" id="status-right">Zprávy: 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Window -->
+  <div class="win-window" id="about-panel">
+    <div class="win-titlebar">
+      <div class="win-titlebar-title"><span class="win-icon">ℹ️</span> O programu CyberChat 2000</div>
+      <div class="win-controls">
+        <button class="win-btn">_</button>
+        <button class="win-btn">□</button>
+        <button class="win-btn">✕</button>
+      </div>
+    </div>
+    <div class="win-content">
+      <p>⚡ <strong>CyberChat 2000</strong> — revolucionární AI chatbot pro nové tisíciletí!</p>
+      <div class="retro-hr"></div>
+      <p>🔑 Potřebujete API klíč z <strong>console.anthropic.com</strong></p>
+      <p>🌐 Váš klíč je uložen pouze v paměti prohlížeče (sessionStorage)</p>
+      <p>💾 Klíč se po zavření okna smaže</p>
+      <div class="retro-hr"></div>
+      <p style="color:#808080;">© 2000 CyberSoft Inc. | Best viewed 800×600 | Netscape 4+ | IE 4+</p>
+    </div>
+  </div>
+
+</div><!-- /main-window -->
+
+<script>
+// ─── State ───────────────────────────────────────────────────
+let apiKey = sessionStorage.getItem('cyberchat_key') || '';
+let messages = [];
+let msgCount = 0;
+let isTyping = false;
+
+const SYSTEM_PROMPT = `Jsi CyberBot 2000, retro AI asistent stylizovaný do roku 2000. Komunikuješ česky nebo jazykem uživatele. Jsi nadšený z internetu, počítačů a technologií 90. let. Občas použiješ retro výrazy jako "surfování na internetu", "cyberspace", "information superhighway". Jsi přátelský, vtipný a velmi nápomocný. Odpovídej stručně a přehledně.`;
+
+// ─── Splash ───────────────────────────────────────────────────
+const splashMsgs = [
+  'Inicializace neuronových sítí...',
+  'Načítání jazykových modulů...',
+  'Kalibrování cyberspace rozhraní...',
+  'Připojování k information superhighway...',
+  'Spouštění CyberChat 2000...',
+];
+let splashIdx = 0;
+let loadPct = 0;
+
+function runSplash() {
+  const bar = document.getElementById('loading-bar');
+  const msg = document.getElementById('splash-msg');
+  const interval = setInterval(() => {
+    loadPct += Math.random() * 6 + 2;
+    if (loadPct >= 100) { loadPct = 100; clearInterval(interval); }
+    bar.style.width = loadPct + '%';
+    if (loadPct > splashIdx * 20 && splashIdx < splashMsgs.length) {
+      msg.textContent = splashMsgs[splashIdx++];
+    }
+    if (loadPct >= 100) {
+      setTimeout(() => {
+        document.getElementById('splash').style.display = 'none';
+      }, 600);
+    }
+  }, 60);
+}
+runSplash();
+
+// ─── Clock ────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours().toString().padStart(2,'0');
+  const m = now.getMinutes().toString().padStart(2,'0');
+  document.getElementById('clock').textContent = h + ':' + m;
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+// ─── API Key ─────────────────────────────────────────────────
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val.startsWith('sk-')) {
+    setStatus('⚠ Neplatný formát klíče!', 'red'); return;
+  }
+  apiKey = val;
+  sessionStorage.setItem('cyberchat_key', val);
+  document.getElementById('api-key-input').value = '●'.repeat(20);
+  document.getElementById('api-status').style.color = '#008000';
+  document.getElementById('api-status').textContent = '[ ✓ Připojeno ]';
+  setStatus('API klíč uložen. Systém připraven!');
+  appendBot('Zdravím! Jsem CyberBot 2000 🤖 Jsem připraven surfovat s vámi po information superhighway! O čem si popovídáme?');
+}
+
+function clearApiKey() {
+  apiKey = '';
+  sessionStorage.removeItem('cyberchat_key');
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('api-status').style.color = '#808080';
+  document.getElementById('api-status').textContent = '[ Nepřipojeno ]';
+  setStatus('Odpojeno.');
+}
+
+if (apiKey) {
+  document.getElementById('api-key-input').value = '●'.repeat(20);
+  document.getElementById('api-status').style.color = '#008000';
+  document.getElementById('api-status').textContent = '[ ✓ Připojeno ]';
+  setStatus('API klíč nalezen v paměti. Připraveno!');
+}
+
+// ─── Chat ─────────────────────────────────────────────────────
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function setTopic(text) {
+  document.getElementById('user-input').value = text;
+  document.getElementById('user-input').focus();
+}
+
+function setStatus(text, color) {
+  const el = document.getElementById('status-left');
+  el.textContent = text;
+  el.style.color = color || '#000000';
+}
+
+function updateMsgCount() {
+  document.getElementById('status-right').textContent = 'Zprávy: ' + msgCount;
+}
+
+function scrollBottom() {
+  const box = document.getElementById('chat-box');
+  box.scrollTop = box.scrollHeight;
+}
+
+function appendUser(text) {
+  const box = document.getElementById('chat-box');
+  const div = document.createElement('div');
+  div.className = 'msg msg-user';
+  div.innerHTML = `<div class="msg-header">► VY [${getTime()}]</div><div class="msg-body">${escHtml(text)}</div>`;
+  box.appendChild(div);
+  msgCount++;
+  updateMsgCount();
+  scrollBottom();
+}
+
+function appendBot(text, streaming) {
+  const box = document.getElementById('chat-box');
+  const id = 'bot-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'msg msg-bot';
+  div.id = id;
+  const bodyId = id + '-body';
+  div.innerHTML = `<div class="msg-header">◄ CYBERBOT [${getTime()}]</div><div class="msg-body" id="${bodyId}">${streaming ? '<span class="cursor-blink"></span>' : escHtml(text)}</div>`;
+  box.appendChild(div);
+  msgCount++;
+  updateMsgCount();
+  scrollBottom();
+  return bodyId;
+}
+
+function appendError(text) {
+  const box = document.getElementById('chat-box');
+  const div = document.createElement('div');
+  div.className = 'msg msg-error';
+  div.innerHTML = `<div class="msg-header">⚠ CHYBA SYSTÉMU [${getTime()}]</div><div class="msg-body">${escHtml(text)}</div>`;
+  box.appendChild(div);
+  scrollBottom();
+}
+
+function getTime() {
+  const n = new Date();
+  return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+async function sendMessage() {
+  if (isTyping) return;
+  if (!apiKey) { appendError('Nejprve zadejte API klíč v sekci Nastavení!'); return; }
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  appendUser(text);
+  messages.push({ role: 'user', content: text });
+
+  isTyping = true;
+  document.getElementById('send-btn').disabled = true;
+  setStatus('⌛ CyberBot přemýšlí...');
+
+  const bodyId = appendBot('', true);
+  const bodyEl = document.getElementById(bodyId);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: messages
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || '(prázdná odpověď)';
+    bodyEl.innerHTML = escHtml(reply);
+    messages.push({ role: 'assistant', content: reply });
+    setStatus('✓ Zpráva přijata');
+  } catch (err) {
+    bodyEl.innerHTML = '';
+    bodyEl.closest('.msg').className = 'msg msg-error';
+    bodyEl.closest('.msg').querySelector('.msg-header').textContent = `⚠ CHYBA SYSTÉMU [${getTime()}]`;
+    bodyEl.textContent = 'Chyba: ' + err.message;
+    setStatus('⚠ Chyba připojení', 'red');
+    messages.pop(); // remove user msg if failed
+  } finally {
+    isTyping = false;
+    document.getElementById('send-btn').disabled = false;
+    scrollBottom();
+  }
+}
+
+function clearChat() {
+  if (!confirm('Smazat celou konverzaci?')) return;
+  messages = [];
+  msgCount = 0;
+  updateMsgCount();
+  const box = document.getElementById('chat-box');
+  box.innerHTML = '<div id="welcome" style="color:#FFFF00; text-align:center; font-size:13px; line-height:1.8;">╔══════════════════════════════╗<br>║   CYBERCHAT 2000 ONLINE!    ║<br>╚══════════════════════════════╝<br><span style=\"color:#00FF00; font-size:12px;\">Konverzace byla vymazána.</span></div>';
+  setStatus('Konverzace vymazána.');
+}
+</script>
+</body>
+</html>
